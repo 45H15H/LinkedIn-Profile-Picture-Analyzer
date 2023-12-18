@@ -1,6 +1,8 @@
 import streamlit as st
 import PIL.Image
 
+import re
+
 # Page configuation
 st.set_page_config(
     page_title="Streamlit App",
@@ -32,32 +34,27 @@ else:
 col1, col2 = st.columns(spec=[0.4, 0.6],
                         gap="medium")
 
+img = None # initialize the image
+
 with col1:
     with st.container(border=True):
-        img = st.file_uploader(label="Upload an image",
+        img_ = st.file_uploader(label="Upload an image",
                                type=["png", "jpg", "jpeg", "webp"],
                                accept_multiple_files=False,
                                key="image0",
                                help="Upload an image to generate a description",
-                               disabled=False)
+                               disabled=not api_key)
                                # label visibility: collapsed
 
         # show the image
-        if img is not None:
-            st.image(img, caption="Uploaded Image", use_column_width=True)
-            st.write("")
-            st.write("Classifying...")
-            st.write("")
+        if img_ is not None:
+            st.image(img_, caption="Uploaded Image", use_column_width=True)
 
             # save the image with PIL.Image
-            img = PIL.Image.open(img)
-
-with col2:
-    st.write("Hello")
+            img = PIL.Image.open(img_)
 
 
-# img = PIL.Image.open(img)
-#====================================================================================================
+
 
 def get_analysis(prompt, image):
     import google.generativeai as genai
@@ -68,7 +65,7 @@ def get_analysis(prompt, image):
       "temperature": 0.9,
       "top_p": 0.95,
       "top_k": 40,
-      "max_output_tokens": 1024,
+      "max_output_tokens": 2048
     }
 
     safety_settings = [
@@ -98,13 +95,6 @@ def get_analysis(prompt, image):
 
     return response.text
 
-
-image_parts = [
-    {
-        "mime_type": "image/jpeg",
-        "data": img
-    }
-]
 
 role = """
 You are a highly skilled AI trained to review LinikedIn profile photos and provide feedback on their quality. You are a professional and your feedback should be constructive and helpful.
@@ -146,30 +136,99 @@ Bad: "Excessive filters, editing, or retouching can misrepresent your look. Opt 
 output_format = """
 Your report should be structured as follows:
 
-1. Resolution and Clarity: [Good/Bad]
-2. Professional Appearance: [Good/Bad]
-3. Face Visibility: [Good/Bad]
-4. Appropriate Expression: [Good/Bad]
-5. Filters and Distortions: [Good/Bad]
+**1. Resolution and Clarity:** \n
+     [Good features/Bad features]
+**2. Professional Appearance:** \n
+     [Good features/Bad features]
+**3. Face Visibility:** \n
+     [Good features/Bad features]
+**4. Appropriate Expression:** \n
+     [Good features/Bad features]
+**5. Filters and Distortions:** \n
+     [Good features/Bad features]
+
+Don't mention Good or Bad only write the features.
 
 You should also provide a confidence score for each assessment, ranging from 0 to 100.
 
+At the end give a final review on whether the image is suitable for a LinkedIn profile photo. Also the reason for your review.
+
 For example:
 
-1. Resolution and Clarity: [Good/Bad] (confidence: 90%)
+**1. Resolution and Clarity:** \n
+     [Good features/Bad features] (confidence: 90%)
 
-2. Professional Appearance: [Good/Bad] (confidence: 80%)
+**2. Professional Appearance:** \n
+     [Good features/Bad features] (confidence: 80%)
 
-3. Face Visibility: [Good/Bad] (confidence: 70%)
+**3. Face Visibility:** \n
+     [Good features/Bad features] (confidence: 70%)
 
-4. Appropriate Expression: [Good/Bad] (confidence: 60%)
+**4. Appropriate Expression:** \n
+     [Good features/Bad features] (confidence: 60%)
 
-5. Filters and Distortions: [Good/Bad] (confidence: 50%)
+**5. Filters and Distortions:** \n
+     [Good features/Bad features] (confidence: 50%)
+
+Final review in short paragraph.
 
 """
 
 prompt = role + instructions + output_format
 
+image_parts = [
+    {
+        "mime_type": "image/jpeg",
+        "data": img
+    }
+]
+
+with col2:
+    with st.container(border=True):
+        analyze_button = st.button("ANALYZE",
+                                   type="primary",
+                                   disabled=not img_,
+                                   help="Analyze the image",
+                                   use_container_width=True)
+
+        if analyze_button:
+            # show spinner while generating
+            with st.spinner("Analyzing..."):
+                # get the analysis
+                analysis = get_analysis(prompt, img)
+
+                placeholder = st.empty()
+
+                placeholder.markdown(f"{analysis}")
+
+                # find all the headings that are enclosed in ** **
+                headings = re.findall(r"\*\*(.*?)\*\*", analysis)
+
+                # find all the features that are after ** and before (confidence
+                features = re.findall(r"\*\*\s\n\n\s{5}(.*?) \(confidence", analysis)
+
+                # find all the confidence scores that are after (confidence: and before %)
+                confidence_scores = re.findall(r"\(confidence: (.*?)\%\)", analysis)
+
+                # find the final review which is after the last confidence score like this:
+                # (confidence: 50%)\n\n(.*?)
+                final_review = re.findall(r"\(confidence: (.*?)\%\)\n\n(.*?)$", analysis, re.DOTALL)[0][1]
+
+                # show the headings
+                st.write("Headings:", headings)
+
+                # show the features
+                st.write("Features:", features)
+
+                # show the confidence scores
+                st.write("Confidence Scores:", confidence_scores)
+
+                # show the final review
+                st.write("Final Review:", final_review)
+
+                st.text_area("Analysis", value=analysis, height=500)
 
 
-st.write(get_analysis(prompt, img))
+
+            # display the analysis
+            # st.write(analysis)
