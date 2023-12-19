@@ -66,7 +66,7 @@ def get_analysis(prompt, image):
       "temperature": 0.9,
       "top_p": 0.95,
       "top_k": 40,
-      "max_output_tokens": 2048
+      "max_output_tokens": 3000,
     }
 
     safety_settings = [
@@ -185,6 +185,8 @@ For example:
 
 **5. Filters and Distortions:**\n[Good features/Bad features] (confidence: 50%)
 
+**6. Single Person and No Pets:**\n[Good features/Bad features] (confidence: 40%)
+
 **Final review:**\n[your final review in short paragraph]
 
 """
@@ -212,48 +214,53 @@ with col2:
         if analyze_button:
             # show spinner while generating
             with st.spinner("Analyzing..."):
-                # get the analysis
-                analysis = get_analysis(prompt, img)
 
-                # find all the headings that are enclosed in ** **
-                headings = re.findall(r"\*\*(.*?)\*\*", analysis)
-
-                # find all the features that are after ** and before (confidence
-                features = re.findall(r"\*\*.*?\*\*\n(.*?)\s\(", analysis)
-
-                # find all the confidence scores that are after (confidence: and before %)
-                confidence_scores = re.findall(r"\(confidence: (.*?)\%\)", analysis)
-
-                # find the final review which is after the last confidence score like this:
-                # (confidence: 50%)\n\n(.*?)
-                final_review = re.findall(r"\*\*Final review:\*\*\n(.*?)$", analysis)[0]
-                
-                for i in range(6):
-
-                    st.divider()
+                try:
+                    # get the analysis
+                    analysis = get_analysis(prompt, img)
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
                     
-                    st.markdown(f"**{headings[i]}**\n\n{features[i]}")
+                else:
 
-                    # show progress bar
-                    data_df = {
-                        "score": [confidence_scores[i]],
-                    }
+                    # find all the headings that are enclosed in ** **
+                    headings = re.findall(r"\*\*(.*?)\*\*", analysis)
 
-                    st.data_editor(
-                        data_df,
-                        column_config={
-                            "score": st.column_config.ProgressColumn(
-                                "Confidence Score",
-                                format="%f",
-                                min_value=0,
-                                max_value=100,
-                                width="large"
-                            ),
-                        },
-                        hide_index=True,
-                        use_container_width=True,
-                        key=f"progress{i}"
-                    )
+                    # find all the features that are after ** and before (confidence
+                    features = re.findall(r"\*\*.*?\*\*\n(.*?)\s\(", analysis)
 
-                    # st.progress(int(confidence_scores[i]))
-                st.markdown(f"**Final review:**\n{final_review}")
+                    # find all the confidence scores that are after (confidence: and before %)
+                    confidence_scores = re.findall(r"\(confidence: (.*?)\%\)", analysis)
+
+                    # find the final review which is after the last confidence score like this:
+                    # (confidence: 50%)\n\n(.*?)
+                    final_review = re.findall(r"\*\*Final review:\*\*\n(.*?)$", analysis)[0]
+                
+                    for i in range(6):
+
+                        st.divider()
+
+                        st.markdown(f"**{headings[i]}**\n\n{features[i]}")
+
+                        # show progress bar
+                        data_df = {
+                            "score": [confidence_scores[i]],
+                        }
+
+                        st.data_editor(
+                            data_df,
+                            column_config={
+                                "score": st.column_config.ProgressColumn(
+                                    "Confidence Score",
+                                    format="%f",
+                                    min_value=0,
+                                    max_value=100,
+                                    width="large"
+                                ),
+                            },
+                            hide_index=True,
+                            use_container_width=True,
+                            key=f"progress{i}"
+                        )
+
+                    st.markdown(f"**Final review:**\n{final_review}")
