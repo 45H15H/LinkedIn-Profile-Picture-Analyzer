@@ -10,11 +10,9 @@ st.set_page_config(
     layout="wide"
 )
 
-# Title
-st.title("Streamlit App")
-
 # Subheader
-st.subheader("Subheader")
+st.subheader(":blue[LinkedIn] Profile Photo Analyzer", divider="gray")
+st.caption("Powerd by Gemini Pro Vision")
 
 # Form to enter API key
 with st.form(key='api_form'):
@@ -25,6 +23,10 @@ with st.form(key='api_form'):
     st.form_submit_button("SUBMIT",
                           disabled=not api_key,
                           use_container_width=True)
+    st.caption(
+    "To use this app, you need an API key. "
+    "You can get one [here](https://ai.google.dev/)."
+    )
 
 if not (api_key.startswith('AI') and len(api_key) == 39):
     st.warning('Please enter your credentials!', icon = '⚠️')
@@ -38,13 +40,12 @@ img = None # initialize the image
 
 with col1:
     with st.container(border=True):
-        img_ = st.file_uploader(label="Upload an image",
+        img_ = st.file_uploader(label=":red[Upload your image]",
                                type=["png", "jpg", "jpeg", "webp"],
                                accept_multiple_files=False,
                                key="image0",
-                               help="Upload an image to generate a description",
+                               help="Upload your image to generate a description",
                                disabled=not api_key)
-                               # label visibility: collapsed
 
         # show the image
         if img_ is not None:
@@ -107,45 +108,62 @@ Your job is to proved a structured report analyzing the image based on the follo
 
 1. Resolution and Clarity:
 
-Good: "The image is high-resolution and clear, showcasing your facial features and details." (Optionally, provide a confidence score for this assessment.)
+Good: "The image is high-resolution and clear, showcasing your facial features and details." 
 Bad: "The image is blurry or pixelated, making it difficult to discern your features. Consider uploading a higher-resolution photo."
+(provide a confidence score for this assessment.)
 
 2. Professional Appearance:
 
 Good: "Your attire is appropriate for a professional setting (business casual or formal)." (Highlight specific elements like a blazer, collared shirt, etc.)
 Bad: "The attire might not be suitable for a professional setting. Consider wearing more formal clothing for your profile picture."
+Include background in this assessment:
 Neutral Background: "The background is simple and uncluttered, allowing the focus to remain on you."
 Distracting Background: "The background is busy or cluttered, potentially drawing attention away from you. Consider using a plain background or cropping the image to remove distractions."
+(provide a confidence score for this assessment.)
 
 3. Face Visibility:
 
 Good: "Your face is clearly visible and unobstructed."
 Bad: "Your face is partially covered by objects or hair, making it difficult to see you clearly. Reposition yourself or adjust the hairstyle for better visibility."
+(provide a confidence score for this assessment.)
 
 4. Appropriate Expression:
 
 Good: "You have a friendly and approachable expression, making you look welcoming and open to connections."
 Bad: "Your expression appears overly serious, stern, or unprofessional. Consider a more relaxed and natural smile for a more approachable look."
+(provide a confidence score for this assessment.)
 
 5. Filters and Distortions:
 
 Good: "The photo appears natural and unaltered, showcasing your authentic appearance."
 Bad: "Excessive filters, editing, or retouching can misrepresent your look. Opt for a natural-looking photo for a more genuine impression."
+(provide a confidence score for this assessment.)
+
+6. Single Person and No Pets:
+
+Good: "The photo contains only you, making it easy for others to identify you."
+Bad: "The photo contains multiple people or pets, making it difficult to identify you. Consider cropping the image to remove distractions."
+(provide a confidence score for this assessment.)
 """
 
 output_format = """
-Your report should be structured as follows:
+Your report should be structured like shown in triple backticks below:
 
-**1. Resolution and Clarity:** \n
-     [Good features/Bad features]
-**2. Professional Appearance:** \n
-     [Good features/Bad features]
-**3. Face Visibility:** \n
-     [Good features/Bad features]
-**4. Appropriate Expression:** \n
-     [Good features/Bad features]
-**5. Filters and Distortions:** \n
-     [Good features/Bad features]
+```
+**1. Resolution and Clarity:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**2. Professional Appearance:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**3. Face Visibility:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**4. Appropriate Expression:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**5. Filters and Distortions:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**6. Single Person and No Pets:**\n[Good features/Bad features] (confidence: [confidence score]%])
+
+**Final review:**\n[your review]
+```
 
 Don't mention Good or Bad only write the features.
 
@@ -153,24 +171,21 @@ You should also provide a confidence score for each assessment, ranging from 0 t
 
 At the end give a final review on whether the image is suitable for a LinkedIn profile photo. Also the reason for your review.
 
+And always keep your output in this format.
+
 For example:
 
-**1. Resolution and Clarity:** \n
-     [Good features/Bad features] (confidence: 90%)
+**1. Resolution and Clarity:**\n[Good features/Bad features] (confidence: 90%)
 
-**2. Professional Appearance:** \n
-     [Good features/Bad features] (confidence: 80%)
+**2. Professional Appearance:**\n[Good features/Bad features] (confidence: 80%)
 
-**3. Face Visibility:** \n
-     [Good features/Bad features] (confidence: 70%)
+**3. Face Visibility:**\n[Good features/Bad features] (confidence: 70%)
 
-**4. Appropriate Expression:** \n
-     [Good features/Bad features] (confidence: 60%)
+**4. Appropriate Expression:**\n[Good features/Bad features] (confidence: 60%)
 
-**5. Filters and Distortions:** \n
-     [Good features/Bad features] (confidence: 50%)
+**5. Filters and Distortions:**\n[Good features/Bad features] (confidence: 50%)
 
-Final review in short paragraph.
+**Final review:**\n[your final review in short paragraph]
 
 """
 
@@ -185,11 +200,14 @@ image_parts = [
 
 with col2:
     with st.container(border=True):
+        st.markdown(":grey[Click the button to analyze the image]")
         analyze_button = st.button("ANALYZE",
                                    type="primary",
                                    disabled=not img_,
                                    help="Analyze the image",
                                    use_container_width=True)
+        
+        
 
         if analyze_button:
             # show spinner while generating
@@ -197,38 +215,45 @@ with col2:
                 # get the analysis
                 analysis = get_analysis(prompt, img)
 
-                placeholder = st.empty()
-
-                placeholder.markdown(f"{analysis}")
-
                 # find all the headings that are enclosed in ** **
                 headings = re.findall(r"\*\*(.*?)\*\*", analysis)
 
                 # find all the features that are after ** and before (confidence
-                features = re.findall(r"\*\*\s\n\n\s{5}(.*?) \(confidence", analysis)
+                features = re.findall(r"\*\*.*?\*\*\n(.*?)\s\(", analysis)
 
                 # find all the confidence scores that are after (confidence: and before %)
                 confidence_scores = re.findall(r"\(confidence: (.*?)\%\)", analysis)
 
                 # find the final review which is after the last confidence score like this:
                 # (confidence: 50%)\n\n(.*?)
-                final_review = re.findall(r"\(confidence: (.*?)\%\)\n\n(.*?)$", analysis, re.DOTALL)[0][1]
+                final_review = re.findall(r"\*\*Final review:\*\*\n(.*?)$", analysis)[0]
+                
+                for i in range(6):
 
-                # show the headings
-                st.write("Headings:", headings)
+                    st.divider()
+                    
+                    st.markdown(f"**{headings[i]}**\n\n{features[i]}")
 
-                # show the features
-                st.write("Features:", features)
+                    # show progress bar
+                    data_df = {
+                        "score": [confidence_scores[i]],
+                    }
 
-                # show the confidence scores
-                st.write("Confidence Scores:", confidence_scores)
+                    st.data_editor(
+                        data_df,
+                        column_config={
+                            "score": st.column_config.ProgressColumn(
+                                "Confidence Score",
+                                format="%f",
+                                min_value=0,
+                                max_value=100,
+                                width="large"
+                            ),
+                        },
+                        hide_index=True,
+                        use_container_width=True,
+                        key=f"progress{i}"
+                    )
 
-                # show the final review
-                st.write("Final Review:", final_review)
-
-                st.text_area("Analysis", value=analysis, height=500)
-
-
-
-            # display the analysis
-            # st.write(analysis)
+                    # st.progress(int(confidence_scores[i]))
+                st.markdown(f"**Final review:**\n{final_review}")
