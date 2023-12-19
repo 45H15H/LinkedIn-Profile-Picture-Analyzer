@@ -5,8 +5,8 @@ import re
 
 # Page configuation
 st.set_page_config(
-    page_title="Streamlit App",
-    page_icon="🧊",
+    page_title="LinkedIn Profile Photo Analyzer",
+    page_icon="👩‍💼",
     layout="wide"
 )
 
