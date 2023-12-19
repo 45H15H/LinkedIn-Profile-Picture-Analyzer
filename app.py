@@ -66,7 +66,7 @@ def get_analysis(prompt, image):
       "temperature": 0.9,
       "top_p": 0.95,
       "top_k": 40,
-      "max_output_tokens": 3000,
+      "max_output_tokens": 5000,
     }
 
     safety_settings = [
@@ -108,86 +108,79 @@ Your job is to proved a structured report analyzing the image based on the follo
 
 1. Resolution and Clarity:
 
-Good: "The image is high-resolution and clear, showcasing your facial features and details." 
-Bad: "The image is blurry or pixelated, making it difficult to discern your features. Consider uploading a higher-resolution photo."
+Describe the resolution and clarity of the image. Tell the user whether the image is blurry or pixelated, making it difficult to discern the features. If the image is not clear, suggest the user to upload a higher-resolution photo.
 (provide a confidence score for this assessment.)
 
 2. Professional Appearance:
 
-Good: "Your attire is appropriate for a professional setting (business casual or formal)." (Highlight specific elements like a blazer, collared shirt, etc.)
-Bad: "The attire might not be suitable for a professional setting. Consider wearing more formal clothing for your profile picture."
-Include background in this assessment:
-Neutral Background: "The background is simple and uncluttered, allowing the focus to remain on you."
-Distracting Background: "The background is busy or cluttered, potentially drawing attention away from you. Consider using a plain background or cropping the image to remove distractions."
+Analyse the image and describe the attire of the person in the image. Tell what he/she is wearing. If the attire is appropriate for a professional setting, tell the user that their attire is appropriate for a professional setting. If the attire is not appropriate for a professional setting, tell the user that their attire might not be suitable for a professional setting. If the attire is not appropriate for a professional setting, suggest the user to wear more formal clothing for their profile picture. Also include background in this assessment. Describe the background of the person. If the background is simple and uncluttered, tell the user about it, that it is  allowing the focus to remain on them. If the background is not good, tell the user about it. If the background is not suitable, suggest the user to use a plain background or crop the image to remove distractions.
 (provide a confidence score for this assessment.)
 
 3. Face Visibility:
 
-Good: "Your face is clearly visible and unobstructed."
-Bad: "Your face is partially covered by objects or hair, making it difficult to see you clearly. Reposition yourself or adjust the hairstyle for better visibility."
+Analyse the image and describe the visibility of the person's face. If the face is clearly visible and unobstructed, tell the user that their face is clearly visible and unobstructed. If the face is partially covered by any objects or hair, making it difficult to see the face clearly, tell the user about it. Also tell where the person is looking. If the person is looking away, suggest the user to look into the camera for a more direct connection.
 (provide a confidence score for this assessment.)
 
 4. Appropriate Expression:
 
-Good: "You have a friendly and approachable expression, making you look welcoming and open to connections."
-Bad: "Your expression appears overly serious, stern, or unprofessional. Consider a more relaxed and natural smile for a more approachable look."
+Describe the expression of the person in the image. If the expression is friendly and approachable, tell the user about it. If the expression is overly serious, stern, or unprofessional, tell the user user about it. If the expression is not appropriate, suggest the user to consider a more relaxed and natural smile for a more approachable look.
 (provide a confidence score for this assessment.)
 
 5. Filters and Distortions:
 
-Good: "The photo appears natural and unaltered, showcasing your authentic appearance."
-Bad: "Excessive filters, editing, or retouching can misrepresent your look. Opt for a natural-looking photo for a more genuine impression."
+Describe the filters and distortions applied to the image. If the image appears natural and unaltered, tell the user about it. If the image appears to be excessively filtered, edited, or retouched, tell the user about it. If the image is excessively filtered, edited, or retouched, suggest the user to opt for a natural-looking photo for a more genuine impression.
 (provide a confidence score for this assessment.)
 
 6. Single Person and No Pets:
 
-Good: "The photo contains only you, making it easy for others to identify you."
-Bad: "The photo contains multiple people or pets, making it difficult to identify you. Consider cropping the image to remove distractions."
+Describe the number of people and pets in the image. If the image contains only the user, tell the user about it. If the image contains multiple people or pets, tell the user about it. If the image contains multiple people or pets, suggest the user to crop the image to remove distractions.
 (provide a confidence score for this assessment.)
+
+Final review:
+
+At the end give a final review on whether the image is suitable for a LinkedIn profile photo. Also the reason for your review.
 """
 
 output_format = """
 Your report should be structured like shown in triple backticks below:
 
 ```
-**1. Resolution and Clarity:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**1. Resolution and Clarity:**\n[description] (confidence: [confidence score]%)
 
-**2. Professional Appearance:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**2. Professional Appearance:**\n[description] (confidence: [confidence score]%)
 
-**3. Face Visibility:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**3. Face Visibility:**\n[description] (confidence: [confidence score]%)
 
-**4. Appropriate Expression:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**4. Appropriate Expression:**\n[description] (confidence: [confidence score]%)
 
-**5. Filters and Distortions:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**5. Filters and Distortions:**\n[description] (confidence: [confidence score]%)
 
-**6. Single Person and No Pets:**\n[Good features/Bad features] (confidence: [confidence score]%])
+**6. Single Person and No Pets:**\n[description] (confidence: [confidence score]%)
 
 **Final review:**\n[your review]
 ```
 
-Don't mention Good or Bad only write the features.
-
 You should also provide a confidence score for each assessment, ranging from 0 to 100.
 
-At the end give a final review on whether the image is suitable for a LinkedIn profile photo. Also the reason for your review.
+Don't copy the above text. Write your own report.
 
 And always keep your output in this format.
 
 For example:
 
-**1. Resolution and Clarity:**\n[Good features/Bad features] (confidence: 90%)
+**1. Resolution and Clarity:**\n[Your description and analysis.] (confidence: [score here]%)
 
-**2. Professional Appearance:**\n[Good features/Bad features] (confidence: 80%)
+**2. Professional Appearance:**\n[Your description and analysis.] (confidence: [socre here]%)
 
-**3. Face Visibility:**\n[Good features/Bad features] (confidence: 70%)
+**3. Face Visibility:**\n[Your description and analysis.] (confidence: [score her]%)
 
-**4. Appropriate Expression:**\n[Good features/Bad features] (confidence: 60%)
+**4. Appropriate Expression:**\n[Your description and analysis.] (confidence: [score here]%)
 
-**5. Filters and Distortions:**\n[Good features/Bad features] (confidence: 50%)
+**5. Filters and Distortions:**\n[Your description and analysis.] (confidence: [score here]%)
 
-**6. Single Person and No Pets:**\n[Good features/Bad features] (confidence: 40%)
+**6. Single Person and No Pets:**\n[Your description and analysis.] (confidence: [score here]%)
 
-**Final review:**\n[your final review in short paragraph]
+**Final review:**\n[Your review]
 
 """
 
