@@ -254,8 +254,7 @@ with col2:
                                     "Confidence Score",
                                     format="%f",
                                     min_value=0,
-                                    max_value=100,
-                                    width="large"
+                                    max_value=100
                                 ),
                             },
                             hide_index=True,
