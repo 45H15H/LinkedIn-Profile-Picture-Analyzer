@@ -21,7 +21,7 @@ with st.form(key='api_form'):
     """)
     api_key = st.text_input("Enter your Gemini API key:", type='password', key = 'token', label_visibility='collapsed')
     st.form_submit_button("SUBMIT",
-                          disabled=not api_key,
+                        #   disabled=not api_key,
                           use_container_width=True)
     st.caption(
     "To use this app, you need an API key. "
@@ -236,23 +236,8 @@ with col2:
                         st.markdown(f"**{headings[i]}**\n\n{features[i]}")
 
                         # show progress bar
-                        data_df = {
-                            "score": [confidence_scores[i]],
-                        }
+                        st.progress(int(confidence_scores[i]), text=f"confidence score: {confidence_scores[i]}")
 
-                        st.data_editor(
-                            data_df,
-                            column_config={
-                                "score": st.column_config.ProgressColumn(
-                                    "Confidence Score",
-                                    format="%f",
-                                    min_value=0,
-                                    max_value=100
-                                ),
-                            },
-                            hide_index=True,
-                            use_container_width=True,
-                            key=f"progress{i}"
-                        )
+                    st.divider()
 
                     st.markdown(f"**Final review:**\n{final_review}")
