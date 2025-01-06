@@ -1,7 +1,7 @@
 import streamlit as st
 import PIL.Image
 
-import re
+import json
 
 # Page configuation
 st.set_page_config(
@@ -39,7 +39,7 @@ col1, col2 = st.columns(spec=[0.4, 0.6],
 img = None # initialize the image
 
 with col1:
-    with st.container(border=True):
+    with st.container(height=500, border=True):
         img_ = st.file_uploader(label=":red[Upload your image]",
                                type=["png", "jpg", "jpeg", "webp"],
                                accept_multiple_files=False,
@@ -49,7 +49,7 @@ with col1:
 
         # show the image
         if img_ is not None:
-            st.image(img_, caption="Uploaded Image", use_column_width=True)
+            st.image(img_, caption="Uploaded Image", use_container_width=True)
 
             # save the image with PIL.Image
             img = PIL.Image.open(img_)
@@ -63,10 +63,10 @@ def get_analysis(prompt, image):
 
     # Set up the model
     generation_config = {
-      "temperature": 0.9,
+      "temperature": 1,
       "top_p": 0.95,
       "top_k": 40,
-      "max_output_tokens": 5000,
+      "max_output_tokens": 8192,
     }
 
     safety_settings = [
@@ -88,7 +88,7 @@ def get_analysis(prompt, image):
       }
     ]
 
-    model = genai.GenerativeModel(model_name="gemini-pro-vision",
+    model = genai.GenerativeModel(model_name="gemini-2.0-flash-exp",
                                   generation_config=generation_config,
                                   safety_settings=safety_settings)
 
@@ -109,32 +109,32 @@ Your job is to proved a structured report analyzing the image based on the follo
 1. Resolution and Clarity:
 
 Describe the resolution and clarity of the image. Tell the user whether the image is blurry or pixelated, making it difficult to discern the features. If the image is not clear, suggest the user to upload a higher-resolution photo.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 2. Professional Appearance:
 
 Analyse the image and describe the attire of the person in the image. Tell what he/she is wearing. If the attire is appropriate for a professional setting, tell the user that their attire is appropriate for a professional setting. If the attire is not appropriate for a professional setting, tell the user that their attire might not be suitable for a professional setting. If the attire is not appropriate for a professional setting, suggest the user to wear more formal clothing for their profile picture. Also include background in this assessment. Describe the background of the person. If the background is simple and uncluttered, tell the user about it, that it is  allowing the focus to remain on them. If the background is not good, tell the user about it. If the background is not suitable, suggest the user to use a plain background or crop the image to remove distractions.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 3. Face Visibility:
 
 Analyse the image and describe the visibility of the person's face. If the face is clearly visible and unobstructed, tell the user that their face is clearly visible and unobstructed. If the face is partially covered by any objects or hair, making it difficult to see the face clearly, tell the user about it. Also tell where the person is looking. If the person is looking away, suggest the user to look into the camera for a more direct connection.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 4. Appropriate Expression:
 
 Describe the expression of the person in the image. If the expression is friendly and approachable, tell the user about it. If the expression is overly serious, stern, or unprofessional, tell the user user about it. If the expression is not appropriate, suggest the user to consider a more relaxed and natural smile for a more approachable look.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 5. Filters and Distortions:
 
 Describe the filters and distortions applied to the image. If the image appears natural and unaltered, tell the user about it. If the image appears to be excessively filtered, edited, or retouched, tell the user about it. If the image is excessively filtered, edited, or retouched, suggest the user to opt for a natural-looking photo for a more genuine impression.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 6. Single Person and No Pets:
 
 Describe the number of people and pets in the image. If the image contains only the user, tell the user about it. If the image contains multiple people or pets, tell the user about it. If the image contains multiple people or pets, suggest the user to crop the image to remove distractions.
-(provide a confidence score for this assessment.)
+(provide a confidence score for this assessment. (0-100))
 
 Final review:
 
@@ -142,46 +142,9 @@ At the end give a final review on whether the image is suitable for a LinkedIn p
 """
 
 output_format = """
-Your report should be structured like shown in triple backticks below:
-
-```
-**1. Resolution and Clarity:**\n[description] (confidence: [confidence score]%)
-
-**2. Professional Appearance:**\n[description] (confidence: [confidence score]%)
-
-**3. Face Visibility:**\n[description] (confidence: [confidence score]%)
-
-**4. Appropriate Expression:**\n[description] (confidence: [confidence score]%)
-
-**5. Filters and Distortions:**\n[description] (confidence: [confidence score]%)
-
-**6. Single Person and No Pets:**\n[description] (confidence: [confidence score]%)
-
-**Final review:**\n[your review]
-```
-
-You should also provide a confidence score for each assessment, ranging from 0 to 100.
-
-Don't copy the above text. Write your own report.
-
-And always keep your output in this format.
-
-For example:
-
-**1. Resolution and Clarity:**\n[Your description and analysis.] (confidence: [score here]%)
-
-**2. Professional Appearance:**\n[Your description and analysis.] (confidence: [socre here]%)
-
-**3. Face Visibility:**\n[Your description and analysis.] (confidence: [score her]%)
-
-**4. Appropriate Expression:**\n[Your description and analysis.] (confidence: [score here]%)
-
-**5. Filters and Distortions:**\n[Your description and analysis.] (confidence: [score here]%)
-
-**6. Single Person and No Pets:**\n[Your description and analysis.] (confidence: [score here]%)
-
-**Final review:**\n[Your review]
-
+Output the result as a raw JSON string as follows:
+resolution and clarity: [Your description and analysis.], resolution and clarity confidence: [score here], professional appearance: [Your description and analysis.], professional appearance confidence: [score here], face visibility: [Your description and analysis.], face visibility confidence: [score here], appropriate expression: [Your description and analysis.], appropriate expression confidence: [score here], filters and distortions: [Your description and analysis.], filters and distortions confidence: [score here], single person and no pets: [Your description and analysis.], single person and no pets confidence: [score here], final_review: [Your final review.]
+Don't use ```json to format the output. Just output the raw JSON string.
 """
 
 prompt = role + instructions + output_format
@@ -194,8 +157,8 @@ image_parts = [
 ]
 
 with col2:
-    with st.container(border=True):
-        st.markdown(":grey[Click the button to analyze the image]")
+    with st.container(height=500, border=True):
+        st.markdown(":grey[Click the button to see the analysis]")
         analyze_button = st.button("ANALYZE",
                                    type="primary",
                                    disabled=not img_,
@@ -215,20 +178,40 @@ with col2:
                     st.error(f"An error occurred: {e}")
                     
                 else:
+                    # parse the json response
+                    response = json.loads(analysis)
 
-                    # find all the headings that are enclosed in ** **
-                    headings = re.findall(r"\*\*(.*?)\*\*", analysis)
+                    # get the features
+                    features = [
+                        response["resolution and clarity"],
+                        response["professional appearance"],
+                        response["face visibility"],
+                        response["appropriate expression"],
+                        response["filters and distortions"],
+                        response["single person and no pets"]
+                    ]
 
-                    # find all the features that are after ** and before (confidence
-                    features = re.findall(r"\*\*.*?\*\*\n(.*?)\s\(", analysis)
+                    # get the confidence scores
+                    confidence_scores = [
+                        response["resolution and clarity confidence"],
+                        response["professional appearance confidence"],
+                        response["face visibility confidence"],
+                        response["appropriate expression confidence"],
+                        response["filters and distortions confidence"],
+                        response["single person and no pets confidence"]
+                    ]
 
-                    # find all the confidence scores that are after (confidence: and before %)
-                    confidence_scores = re.findall(r"\(confidence: (.*?)\%\)", analysis)
+                    headings = [
+                        "Resolution and Clarity",
+                        "Professional Appearance",
+                        "Face Visibility",
+                        "Appropriate Expression",
+                        "Filters and Distortions",
+                        "Single Person and No Pets"
+                    ]     
 
-                    # find the final review which is after the last confidence score like this:
-                    # (confidence: 50%)\n\n(.*?)
-                    final_review = re.findall(r"\*\*Final review:\*\*\n(.*?)$", analysis)[0]
-                
+                    final_review = response["final_review"]            
+
                     for i in range(6):
 
                         st.divider()
