@@ -1,4 +1,4 @@
-# LinkedIn Profile Picture Analyzer
+# ProfileInsights
 
 > A web application to get insights about your LinkedIn profile picture. Built with Google's Gemini Pro Vision model and Streamlit.
 
